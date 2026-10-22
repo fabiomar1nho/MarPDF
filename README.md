@@ -29,10 +29,12 @@ O MarPDF é uma aplicação web de arquivo único (`index.html`) que reúne ferr
 | **Dividir / Extrair** | Extrai páginas por intervalos (`1-3, 5, 8-10`; `8-` vai até o fim) em um novo PDF | Concluída |
 | **Organizar páginas** | Miniaturas reais (PDF.js); reordena, gira 90° e exclui páginas; mostra posição nova e original | Concluída |
 | **Imagens para PDF** | PNG, JPG e WEBP; folha A4, Carta ou proporcional; retrato/paisagem; margem de 0 a 50 mm | Concluída |
+| **PDF para imagens** | Converte páginas (todas ou por intervalo) em PNG ou JPG, 72 a 300 dpi, com download individual ou ZIP | Concluída |
+| **Comprimir PDF** | Otimiza a estrutura ou rasteriza as páginas em JPEG (150/110/80 dpi); mostra tamanho antes/depois e só oferece o download se o arquivo diminuir | Concluída |
 | **Preparar para impressão** | Ajusta para A4 ou Carta com margem em pontos; encaixe "Conter" ou "Preencher" | Concluída |
 | **Central de Ajuda** | FAQ com busca local, categorias, ajuda por ferramenta e tutorial de atalho na tela inicial | Concluída |
 
-Cada ferramenta mostra uma etiqueta de disponibilidade calculada a partir das bibliotecas realmente carregadas, e a tela principal tem um indicador geral de conexão.
+Uma etiqueta de aviso só aparece em uma ferramenta quando ela precisa de internet para carregar ou está indisponível (calculado a partir das bibliotecas realmente carregadas). O painel “Disponibilidade desta ferramenta” e o indicador de conexão no topo dão os detalhes.
 
 ## Scanner com câmera
 
@@ -83,6 +85,7 @@ Para uso offline permanente seria necessário embutir as bibliotecas ou adiciona
 | PDF-Lib | 1.17.1 | Criar, unir, extrair e girar PDFs |
 | PDF.js | 3.11.174 | Miniaturas das páginas |
 | Cropper.js | 1.6.1 | Recorte manual |
+| JSZip | 3.10.1 | ZIP das imagens (PDF para imagens) |
 | OpenCV.js | 4.9.0 (sob demanda) | Detecção de bordas e correção de perspectiva |
 
 ## Compatibilidade e permissões
@@ -106,7 +109,9 @@ README.md    # este arquivo
 
 ## Limitações e melhorias futuras
 
-Ainda **não implementados**: comprimir PDF, converter PDF em imagens, informações/metadados do PDF, busca e filtros por categoria na tela de ferramentas, PDFs protegidos por senha de abertura, uso offline permanente (PWA/service worker) e pré-visualização antes de juntar ou dividir.
+**Comprimir PDF:** os níveis Leve/Média/Alta transformam as páginas em imagens (o texto deixa de ser selecionável); “Só otimizar a estrutura” economiza pouco. O resultado varia conforme o PDF.
+
+Ainda **não implementados**: informações/metadados do PDF, cancelar operações em andamento, busca e filtros por categoria na tela de ferramentas, PDFs protegidos por senha de abertura, uso offline permanente (PWA/service worker) e pré-visualização antes de juntar ou dividir.
 
 ## Créditos
 
