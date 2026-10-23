@@ -15,6 +15,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style type="text/tailwindcss">
 @layer components{
+ .sb{@apply flex flex-col items-center justify-center gap-1 min-h-[56px] px-1 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[11px] font-semibold text-center active:scale-95 transition}
  .nv{@apply inline-flex items-center gap-2 min-h-[40px] px-4 rounded-full text-sm font-semibold whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition}
  .nv.on{@apply bg-indigo-600 text-white shadow hover:bg-indigo-600}
  .mi{@apply flex items-center gap-3 w-full p-2 rounded-xl min-h-[48px] text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition}
@@ -83,21 +84,101 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
 </div>
 
 <section id="t-scan" class="tool card">
-  <h2 class="text-xl font-bold"><i class="fa-solid fa-camera text-indigo-500"></i> Scanner de bolso</h2>
-  <p class="text-sm text-slate-500 dark:text-slate-400">Capture uma página por foto, em sequência. Toque em <i class="fa-solid fa-pen"></i> para recortar e aplicar filtros (opcional).</p>
+  <h2 class="text-xl font-bold"><i class="fa-solid fa-camera text-indigo-500"></i> Scanner de documentos</h2>
+  <ol id="scSteps" class="grid grid-cols-4 gap-2 text-xs font-bold text-center" aria-label="Etapas do scanner"></ol>
   <input id="scCam" type="file" accept="image/*" capture="environment" hidden>
   <input id="scGal" type="file" accept="image/*" multiple hidden>
-  <div class="flex flex-wrap gap-2">
-    <button class="btn" onclick="scCam.click()"><i class="fa-solid fa-camera"></i> Capturar página</button>
-    <button class="btn2" onclick="scGal.click()"><i class="fa-solid fa-images"></i> Da galeria</button>
+
+  <!-- PASSO 1: captura -->
+  <div id="sc1" class="space-y-4">
+    <p class="text-sm text-slate-500 dark:text-slate-400">Fotografe uma página por vez, quantas quiser. Quando terminar, toque em <b>Concluir Capturas</b>.</p>
+    <div class="flex flex-wrap gap-2">
+      <button class="btn flex-1 !min-h-[56px] text-base" onclick="vfOpen()"><i class="fa-solid fa-camera"></i> Abrir câmera</button>
+      <button class="btn2" onclick="scCam.click()"><i class="fa-solid fa-mobile-screen"></i> Câmera nativa</button>
+      <button class="btn2" onclick="scGal.click()"><i class="fa-solid fa-images"></i> Da galeria</button>
+    </div>
+    <div id="scStrip" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2"></div>
+    <div class="sticky bottom-3 flex items-center justify-between gap-3 p-3 rounded-2xl bg-slate-900/90 text-white shadow-xl backdrop-blur">
+      <span id="scCnt" class="font-bold" role="status" aria-live="polite">0 Fotos Capturadas</span>
+      <button id="scDone" class="btn" onclick="scDone()" disabled><i class="fa-solid fa-check"></i> Concluir Capturas</button>
+    </div>
   </div>
-  <label class="flex items-start gap-3 p-3 rounded-xl bg-indigo-50 dark:bg-slate-900 border border-indigo-100 dark:border-slate-700 cursor-pointer">
-    <input id="scAuto" type="checkbox" class="mt-1 w-6 h-6 accent-indigo-600 shrink-0">
-    <span><b>Detectar bordas e recortar automaticamente (Experimental)</b><br><span class="text-xs text-slate-500 dark:text-slate-400">Desativado por padrão. Sugere os 4 cantos da folha para você revisar e corrigir antes de endireitar a imagem. Usa OpenCV.js, baixado só quando você ativa.</span></span>
-  </label>
-  <p id="scSt" class="text-sm font-semibold text-indigo-600 dark:text-indigo-300" role="status" aria-live="polite"></p>
-  <div id="scG" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3"></div>
-  <button id="scGo" class="btn w-full"><i class="fa-solid fa-file-arrow-down"></i> Gerar PDF (<span id="scN">0</span> pág.)</button>
+
+  <!-- PASSO 2: enquadramento (tela cheia, Cropper.js) -->
+  <div id="sc2" class="hidden fixed inset-0 z-40 bg-slate-900 text-white flex flex-col">
+    <div class="flex items-center justify-between gap-3 p-3">
+      <button class="ib !bg-white/10 !border-white/20 !text-white" onclick="scExit()" aria-label="Sair do enquadramento"><i class="fa-solid fa-xmark"></i></button>
+      <div class="text-center min-w-0"><b id="s2T" class="block text-sm"></b><span id="scSt" role="status" aria-live="polite" class="block text-xs text-indigo-200"></span></div>
+      <span class="w-10"></span>
+    </div>
+    <div class="flex-1 min-h-0 px-2"><div style="width:100%;height:100%"><img id="s2I" alt="Foto para enquadrar" style="display:block;max-width:100%;max-height:100%"></div></div>
+    <div class="p-3 space-y-2">
+      <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+        <button class="sb" onclick="s2Nav(-1)"><i class="fa-solid fa-chevron-left"></i><span>Foto anterior</span></button>
+        <button class="sb" onclick="s2Rot()"><i class="fa-solid fa-rotate-right"></i><span>Girar 90°</span></button>
+        <button class="sb" onclick="s2All()"><i class="fa-solid fa-expand"></i><span>Selecionar tudo</span></button>
+        <button class="sb" onclick="s2Auto()"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Ajuste automático</span></button>
+        <button class="sb" onclick="s2Persp()"><i class="fa-solid fa-vector-square"></i><span>Perspectiva</span></button>
+        <button class="sb" onclick="s2Nav(1)"><i class="fa-solid fa-chevron-right"></i><span>Próxima foto</span></button>
+      </div>
+      <button id="s2Ok" class="btn w-full !min-h-[52px]" onclick="s2Ok()"></button>
+    </div>
+  </div>
+
+  <!-- PASSO 3: filtros (tela cheia, Canvas) -->
+  <div id="sc3" class="hidden fixed inset-0 z-40 bg-slate-900 text-white flex flex-col">
+    <div class="flex items-center justify-between gap-3 p-3">
+      <button class="ib !bg-white/10 !border-white/20 !text-white" onclick="scStep(4)" aria-label="Ir para a galeria"><i class="fa-solid fa-xmark"></i></button>
+      <b id="s3T" class="text-sm"></b><span class="w-10"></span>
+    </div>
+    <div class="flex-1 min-h-0 flex items-center justify-center p-2"><canvas id="s3C" class="rounded-lg shadow-xl" style="max-width:100%;max-height:100%;width:auto;height:auto;background:#fff"></canvas></div>
+    <div class="p-3 space-y-3">
+      <div id="s3F" class="grid grid-cols-4 gap-2"></div>
+      <div class="grid grid-cols-2 gap-4 text-xs font-semibold">
+        <label>Brilho<input id="s3B" type="range" min="-100" max="100" value="0" class="w-full h-8"></label>
+        <label>Contraste<input id="s3K" type="range" min="0.5" max="2" step="0.05" value="1" class="w-full h-8"></label>
+      </div>
+      <label class="flex items-center gap-2 text-sm"><input id="s3A" type="checkbox" class="w-5 h-5 accent-indigo-600"> Aplicar a todas as páginas</label>
+      <div class="flex gap-2">
+        <button class="btn2 !px-5" onclick="s3Nav(-1)" aria-label="Foto anterior"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="btn2 !px-5" onclick="s3Nav(1)" aria-label="Próxima foto"><i class="fa-solid fa-chevron-right"></i></button>
+        <button class="btn flex-1" onclick="scStep(4)"><i class="fa-solid fa-check"></i> Concluir filtros</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSO 4: galeria e exportação -->
+  <div id="sc4" class="hidden space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <p class="text-sm text-slate-500 dark:text-slate-400">Arraste pela alça <i class="fa-solid fa-grip"></i> para reordenar. <i class="fa-solid fa-crop-simple"></i> reenquadra e <i class="fa-solid fa-wand-magic-sparkles"></i> muda o filtro da página.</p>
+      <b id="s4N" class="text-sm"></b>
+    </div>
+    <div id="scG" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3"></div>
+    <button class="btn2" onclick="scAddMore()"><i class="fa-solid fa-plus"></i> Adicionar mais fotos</button>
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div><label class="lb" for="scName">Nome do arquivo</label><input id="scName" class="inp"></div>
+      <div><label class="lb" for="scSz">Tamanho da folha</label><select id="scSz" class="inp"><option value="fit">Proporcional à foto</option><option value="a4">A4 (orientação automática)</option><option value="letter">Carta (orientação automática)</option></select></div>
+    </div>
+    <button id="scGo" class="btn w-full !min-h-[56px]"><i class="fa-solid fa-file-arrow-down"></i> Salvar e Baixar PDF</button>
+  </div>
+
+  <!-- Visor ao vivo (MediaDevices) -->
+  <div id="vf" class="hidden fixed inset-0 z-40 bg-black text-white flex flex-col">
+    <div class="flex items-center justify-between p-3">
+      <button class="ib !bg-white/10 !border-white/20 !text-white" onclick="vfClose()" aria-label="Fechar câmera"><i class="fa-solid fa-xmark"></i></button>
+      <span id="vfCnt" role="status" aria-live="polite" class="px-4 py-2 rounded-full bg-white/15 font-bold text-sm">0 Fotos Capturadas</span>
+      <span class="w-10"></span>
+    </div>
+    <div class="flex-1 min-h-0 relative flex items-center justify-center">
+      <video id="vfV" playsinline muted autoplay class="max-w-full max-h-full"></video>
+      <div id="vfF" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-150"></div>
+    </div>
+    <div class="p-4 flex items-center justify-between gap-3">
+      <span class="w-28"></span>
+      <button id="vfS" class="w-20 h-20 rounded-full bg-white border-4 border-indigo-400 active:scale-90 transition" aria-label="Tirar foto"></button>
+      <button class="btn w-28 !px-2 !min-h-[56px] text-sm" onclick="vfDone()">Concluir Capturas</button>
+    </div>
+  </div>
 </section>
 
 <section id="t-merge" class="tool card hidden">
@@ -208,21 +289,6 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
   <p class="text-xs">Processamento local via PDF-Lib &amp; PDF.js</p>
 </footer>
 
-<!-- Editor do scanner -->
-<div id="ed" class="hidden fixed inset-0 z-40 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4">
-  <div class="bg-white dark:bg-slate-800 w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl p-4 space-y-3 max-h-screen overflow-y-auto">
-    <div class="flex items-center justify-between"><h3 class="font-bold"><i class="fa-solid fa-crop-simple text-indigo-500"></i> Recortar e ajustar</h3>
-      <button class="ib" onclick="edClose()" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button></div>
-    <div class="bg-slate-100 dark:bg-slate-900 rounded-xl p-2"><div style="max-height:50vh"><img id="ei" alt="" style="display:block;max-width:100%;max-height:50vh;width:auto;margin:auto"></div></div>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <div><label class="lb">Filtro</label><select id="eF" class="inp"><option value="orig">Original</option><option value="bw">P&amp;B Documento</option><option value="shadow">Remover sombras</option></select></div>
-      <div><label class="lb">Brilho</label><input id="eB" type="range" min="-100" max="100" value="0" class="w-full h-11"></div>
-      <div><label class="lb">Contraste</label><input id="eC" type="range" min="0.5" max="2" step="0.05" value="1" class="w-full h-11"></div>
-    </div>
-    <div class="flex gap-2"><button class="btn2" onclick="edReset()"><i class="fa-solid fa-rotate-left"></i> Restaurar</button><button class="btn flex-1" onclick="edApply()"><i class="fa-solid fa-check"></i> Aplicar</button></div>
-  </div>
-</div>
-
 <div id="qd" class="hidden fixed inset-0 z-40 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4">
   <div class="bg-white dark:bg-slate-800 w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl p-4 space-y-3 max-h-screen overflow-y-auto">
     <div class="flex items-center justify-between"><h3 class="font-bold"><i class="fa-solid fa-vector-square text-indigo-500"></i> Revisar bordas da folha</h3><button class="ib" onclick="quadEnd(false)" aria-label="Cancelar"><i class="fa-solid fa-xmark"></i></button></div>
@@ -324,7 +390,7 @@ function dz(d,i,cb){
 
 /* ---------- galerias e lista (render + arrastar/mover) ---------- */
 const R={
-  sc(){gal('sc','scG');$('scN').textContent=S.sc.length},
+  sc(){gal('sc','scG');scCount()},
   im(){gal('im','imG')},
   og(){gal('og','ogG')},
   mg(){
@@ -333,7 +399,7 @@ const R={
 };
 function gal(k,box){
   $(box).innerHTML=S[k].map((x,i)=>{
-    const ex=k==='sc'?`<button class="ib" aria-label="Ajustar bordas (4 cantos)" title="Ajustar bordas (4 cantos)" onclick="quadOpen(${i})"><i class="fa-solid fa-vector-square"></i></button><button class="ib" aria-label="Recortar e aplicar filtros" title="Recortar e filtros" onclick="edOpen(${i})"><i class="fa-solid fa-pen"></i></button>`:k==='og'?`<button class="ib" onclick="rot(${i})"><i class="fa-solid fa-rotate-right"></i></button>`:'';
+    const ex=k==='sc'?`<button class="ib" aria-label="Reenquadrar página" title="Reenquadrar" onclick="scGoto(${i},2)"><i class="fa-solid fa-crop-simple"></i></button><button class="ib" aria-label="Filtros da página" title="Filtros" onclick="scGoto(${i},3)"><i class="fa-solid fa-wand-magic-sparkles"></i></button>`:k==='og'?`<button class="ib" onclick="rot(${i})"><i class="fa-solid fa-rotate-right"></i></button>`:'';
     const lab=k==='og'?`#${i+1} · orig. ${x.i+1}`:`${i+1}`;
     return `<div class="th" data-k="${k}" data-i="${i}"><img src="${x.url}" alt="" draggable="false" style="transform:rotate(${x.rot||0}deg)"><span class="bd">${lab}</span><div class="flex flex-wrap items-center justify-between mt-1"><span data-h class="gr"><i class="fa-solid fa-grip"></i></span><div class="flex gap-1">${ex}<button class="ib" onclick="del('${k}',${i})"><i class="fa-solid fa-trash text-rose-500"></i></button></div></div></div>`}).join('')||'<p class="col-span-full text-sm text-slate-500">Nada por aqui ainda.</p>';
 }
@@ -361,22 +427,25 @@ function proc(src,cr,o,max){
   const x=c.getContext('2d',{willReadFrequently:true});
   x.fillStyle='#fff';x.fillRect(0,0,w,h);
   x.drawImage(src,src.width*cr.x,src.height*cr.y,sw,sh,0,0,w,h);
-  if(o.f==='orig'&&!o.b&&o.c==1)return c;
+  const f=o.f,b=+o.b||0,ct=+o.c||1;
+  if(f==='orig'&&!b&&ct===1)return c;
   const im=x.getImageData(0,0,w,h),d=im.data;let bg=null;
-  if(o.f!=='orig'){ // estima o fundo (iluminação) com versão reduzida e suavizada
+  if(f==='magic'||f==='bw'){ // estima a iluminação do fundo para remover sombras
     const s=document.createElement('canvas');s.width=Math.max(1,w>>4);s.height=Math.max(1,h>>4);
     s.getContext('2d').drawImage(c,0,0,s.width,s.height);
     const u=document.createElement('canvas');u.width=w;u.height=h;const ux=u.getContext('2d',{willReadFrequently:true});
     ux.imageSmoothingQuality='high';ux.drawImage(s,0,0,w,h);bg=ux.getImageData(0,0,w,h).data;
   }
-  const b=+o.b,ct=+o.c;
   for(let i=0;i<d.length;i+=4){
     let r=d[i],g=d[i+1],bl=d[i+2];
     if(bg){
       r=Math.min(255,r/Math.max(bg[i],1)*255);g=Math.min(255,g/Math.max(bg[i+1],1)*255);bl=Math.min(255,bl/Math.max(bg[i+2],1)*255);
-      if(o.f==='bw'){const y=clamp((((r+g+bl)/3)-110)*255/90,0,255);r=g=bl=y}
-      else{r=clamp((r-40)*255/195,0,255);g=clamp((g-40)*255/195,0,255);bl=clamp((bl-40)*255/195,0,255)}
-    }
+      if(f==='bw'){const y=clamp((((r+g+bl)/3)-110)*255/90,0,255);r=g=bl=y}
+      else{ // Magic Color: sem sombras, mais contraste e cor realçada
+        r=clamp((r-40)*255/195,0,255);g=clamp((g-40)*255/195,0,255);bl=clamp((bl-40)*255/195,0,255);
+        const y=.299*r+.587*g+.114*bl;r=clamp(y+(r-y)*1.3,0,255);g=clamp(y+(g-y)*1.3,0,255);bl=clamp(y+(bl-y)*1.3,0,255);
+      }
+    }else if(f==='gray'){const y=.299*r+.587*g+.114*bl,v=clamp(y*1.1+18,0,255);r=g=bl=v}
     d[i]=clamp((r-128)*ct+128+b,0,255);d[i+1]=clamp((g-128)*ct+128+b,0,255);d[i+2]=clamp((bl-128)*ct+128+b,0,255);
   }
   x.putImageData(im,0,0);return c;
@@ -389,30 +458,6 @@ async function toCanvas(file,max=2400){
 }
 const cvBytes=async c=>{const b=await new Promise(r=>c.toBlob(r,'image/jpeg',.9));return {bytes:new Uint8Array(await b.arrayBuffer()),w:c.width,h:c.height}};
 function thumb(it){it.url=proc(it.src,it.cr,it,320).toDataURL('image/jpeg',.7)}
-async function addScan(files){
-  for(const f of files){
-    try{
-      const src=await toCanvas(f),it={src,orig:src,cr:{x:0,y:0,w:1,h:1},f:'orig',b:0,c:1};
-      thumb(it);S.sc.push(it);R.sc();
-      if($('scAuto').checked)await autoEdges(S.sc.length-1,files.length===1);
-    }catch(e){toast('Imagem não suportada: '+f.name,1)}
-  }
-  R.sc();
-}
-async function autoEdges(i,manual){
-  const st=$('scSt');
-  try{
-    st.textContent='Analisando documento…';
-    await loadCV();await new Promise(r=>setTimeout(r,30));
-    const q=detectQuad(S.sc[i].orig);st.textContent='';
-    if(q)await quadOpen(i,q,'Sugestão automática (experimental): confira e arraste os 4 pontos até os cantos da folha, se precisar.');
-    else{st.textContent='Não foi possível detectar as bordas automaticamente. Ajuste o recorte manualmente.';if(manual)edOpen(i)}
-  }catch(e){
-    console.warn(e);
-    st.textContent='Detecção automática indisponível ('+(navigator.onLine?'não foi possível carregar o OpenCV.js':'sem internet')+'). Ajuste o recorte manualmente.';
-    if(manual)edOpen(i);
-  }
-}
 /* OpenCV.js sob demanda */
 const CV={s:'idle'};let cvP=null,cvEl=null;
 const CVT={idle:'não carregado (só é baixado se você ativar a detecção)',load:'carregando…',ok:'pronto',fail:'falha ao carregar; o recorte manual continua disponível',off:'sem internet; o recorte manual continua disponível'};
@@ -531,34 +576,138 @@ async function quadEnd(ok){
   }catch(e){console.warn(e);toast('Não foi possível corrigir a perspectiva. A foto original foi mantida; use o recorte manual (✎).',1)}
   $('ld').classList.add('hidden');Q=null;q.res(done);
 }
-$('scCam').onchange=async e=>{await addScan([...e.target.files]);e.target.value=''};
-$('scGal').onchange=async e=>{await addScan([...e.target.files]);e.target.value=''};
+/* ================= SCANNER: fluxo em 4 passos ================= */
+const W={step:1,p:0,start:0,cp:null,single:false},FULL={x:0,y:0,w:1,h:1};
+const STEPS=['Capturar','Enquadrar','Filtros','Exportar'];
+const stepCls=(on,done)=>'rounded-xl py-2 px-1 '+(on?'bg-indigo-600 text-white':done?'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200':'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400');
+$('scSteps').innerHTML=STEPS.map((t,i)=>`<li data-s="${i+1}" class="${stepCls(i===0,false)}"><span class="block text-base">${i+1}</span>${t}</li>`).join('');
+$('scName').value='Documento_Escaneado_'+new Date().getFullYear();
+const cvURL=(c,max)=>{const k=Math.min(1,max/Math.max(c.width,c.height)),t=document.createElement('canvas');t.width=Math.round(c.width*k);t.height=Math.round(c.height*k);t.getContext('2d').drawImage(c,0,0,t.width,t.height);return t.toDataURL('image/jpeg',.88)};
+function rotC(c){const r=document.createElement('canvas');r.width=c.height;r.height=c.width;const x=r.getContext('2d');x.translate(r.width,0);x.rotate(Math.PI/2);x.drawImage(c,0,0);return r}
 
-/* ---------- editor de recorte (Cropper.js) + filtros ---------- */
-let E={i:-1,cp:null},ft;
-const edUrl=()=>proc(S.sc[E.i].src,{x:0,y:0,w:1,h:1},{f:$('eF').value,b:$('eB').value,c:$('eC').value},900).toDataURL('image/jpeg',.85);
-function edOpen(i){
-  E.i=i;const it=S.sc[i];
-  $('eF').value=it.f;$('eB').value=it.b;$('eC').value=it.c;
-  if(E.cp){E.cp.destroy();E.cp=null}
-  const img=$('ei');$('ed').classList.remove('hidden');
+function scPush(c){const it={src:c,orig:c,cr:{...FULL},f:'orig',b:0,c:1};thumb(it);S.sc.push(it);R.sc()}
+async function addFiles(fs){
+  for(const f of fs){try{scPush(await toCanvas(f))}catch(e){toast('Imagem não suportada: '+f.name,1)}}
+}
+$('scCam').onchange=async e=>{await addFiles([...e.target.files]);e.target.value=''};
+$('scGal').onchange=async e=>{await addFiles([...e.target.files]);e.target.value=''};
+function scCount(){
+  const n=S.sc.length,t=`${n} ${n===1?'Foto Capturada':'Fotos Capturadas'}`;
+  $('scCnt').textContent=t;$('vfCnt').textContent=t;$('scDone').disabled=!n;$('scGo').disabled=!n;$('s4N').textContent=n+' página(s)';
+  $('scStrip').innerHTML=S.sc.map((x,i)=>`<div class="relative"><img src="${x.url}" alt="Página ${i+1}" class="rounded-lg aspect-square object-cover w-full"><button class="absolute -top-1.5 -right-1.5 w-7 h-7 rounded-full bg-rose-600 text-white text-xs" aria-label="Excluir foto ${i+1}" onclick="del('sc',${i})"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
+}
+function scStep(n){
+  if(W.step===2&&n!==2&&W.cp){W.cp.destroy();W.cp=null}
+  W.step=n;
+  [1,2,3,4].forEach(i=>$('sc'+i).classList.toggle('hidden',i!==n));
+  document.body.style.overflow=(n===2||n===3)?'hidden':'';
+  document.querySelectorAll('#scSteps li').forEach(li=>{const k=+li.dataset.s;li.className=stepCls(k===n,k<n);li.setAttribute('aria-current',k===n?'step':'false')});
+  if(n===2)s2Load();else if(n===3)s3Draw();else if(n===4){S.sc.forEach(thumb);R.sc()}
+  if(n!==2&&n!==3)window.scrollTo(0,0);
+}
+function scDone(){if(!S.sc.length)return;W.single=false;W.p=Math.min(W.start,S.sc.length-1);scStep(2)}
+function scAddMore(){W.start=S.sc.length;scStep(1)}
+function scGoto(i,n){W.p=i;W.single=(n===2);scStep(n)}
+function scExit(){s2Save();scStep(S.sc.length?4:1)}
+
+/* --- visor ao vivo (MediaDevices), com alternativa por input capture --- */
+let VS=null;
+async function vfOpen(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Câmera ao vivo indisponível aqui. Abrindo a câmera nativa…',1);$('scCam').click();return}
+  try{
+    VS=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
+    $('vfV').srcObject=VS;await $('vfV').play().catch(()=>{});
+    $('vf').classList.remove('hidden');document.body.style.overflow='hidden';
+  }catch(e){toast('Não foi possível usar a câmera ao vivo (permissão negada ou indisponível). Use “Câmera nativa” ou “Da galeria”.',1)}
+}
+function vfClose(){
+  if(VS){VS.getTracks().forEach(t=>t.stop());VS=null}
+  $('vfV').srcObject=null;$('vf').classList.add('hidden');document.body.style.overflow='';
+}
+function vfDone(){vfClose();scDone()}
+$('vfS').onclick=()=>{
+  const v=$('vfV');if(!v.videoWidth)return;
+  const k=Math.min(1,2400/Math.max(v.videoWidth,v.videoHeight)),c=document.createElement('canvas');
+  c.width=Math.round(v.videoWidth*k);c.height=Math.round(v.videoHeight*k);c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+  scPush(c);const f=$('vfF');f.style.opacity='.8';setTimeout(()=>f.style.opacity='0',120);
+};
+
+/* --- passo 2: enquadramento --- */
+function s2Save(){
+  const it=S.sc[W.p];if(!it||!W.cp)return;
+  const d=W.cp.getData(),n=W.cp.getImageData(),x=clamp(d.x/n.naturalWidth,0,.98),y=clamp(d.y/n.naturalHeight,0,.98);
+  it.cr={x,y,w:clamp(d.width/n.naturalWidth,.02,1-x),h:clamp(d.height/n.naturalHeight,.02,1-y)};
+}
+function s2Load(){
+  const it=S.sc[W.p];if(!it){scStep(1);return}
+  const last=W.p>=S.sc.length-1;
+  $('s2T').textContent=`Foto ${W.p+1} de ${S.sc.length}`;
+  $('s2Ok').innerHTML=W.single?'<i class="fa-solid fa-check"></i> Confirmar enquadramento':last?'<i class="fa-solid fa-check"></i> Confirmar e ir aos filtros':'<i class="fa-solid fa-check"></i> Confirmar e avançar';
+  if(W.cp){W.cp.destroy();W.cp=null}
+  const img=$('s2I');
   img.onload=()=>{
     img.onload=null;
-    E.cp=new Cropper(img,{viewMode:1,dragMode:'none',autoCropArea:1,movable:false,zoomable:false,rotatable:false,scalable:false,background:false,
+    W.cp=new Cropper(img,{viewMode:1,dragMode:'none',autoCropArea:1,movable:false,zoomable:false,rotatable:false,scalable:false,background:false,
       ready(){const cp=img.cropper,n=cp.getImageData(),c=it.cr;cp.setData({x:c.x*n.naturalWidth,y:c.y*n.naturalHeight,width:c.w*n.naturalWidth,height:c.h*n.naturalHeight})}});
   };
-  img.src=edUrl();
+  img.src=cvURL(it.src,1400);
 }
-function edClose(){if(E.cp){E.cp.destroy();E.cp=null}$('ed').classList.add('hidden')}
-function edReset(){$('eF').value='orig';$('eB').value=0;$('eC').value=1;if(E.cp){E.cp.replace(edUrl(),true);E.cp.reset()}}
-function edApply(){
-  const it=S.sc[E.i],d=E.cp.getData(),n=E.cp.getImageData();
-  const x=clamp(d.x/n.naturalWidth,0,.98),y=clamp(d.y/n.naturalHeight,0,.98);
-  it.cr={x,y,w:clamp(d.width/n.naturalWidth,.02,1-x),h:clamp(d.height/n.naturalHeight,.02,1-y)};
-  it.f=$('eF').value;it.b=+$('eB').value;it.c=+$('eC').value;
-  thumb(it);edClose();R.sc();
+function s2Nav(d){s2Save();const j=W.p+d;if(j<0||j>=S.sc.length)return;thumb(S.sc[W.p]);W.p=j;s2Load()}
+function s2All(){if(!W.cp)return;const n=W.cp.getImageData();W.cp.setData({x:0,y:0,width:n.naturalWidth,height:n.naturalHeight})}
+function s2Rot(){
+  const it=S.sc[W.p],same=it.orig===it.src,r=rotC(it.src);
+  it.orig=same?r:rotC(it.orig);it.src=r;it.cr={...FULL};thumb(it);s2Load();
 }
-['eF','eB','eC'].forEach(id=>$(id).addEventListener('input',()=>{clearTimeout(ft);ft=setTimeout(()=>{if(E.cp)E.cp.replace(edUrl(),true)},60)}));
+function s2Ok(){
+  s2Save();thumb(S.sc[W.p]);
+  if(W.single){W.single=false;scStep(4);return}
+  if(W.p<S.sc.length-1){W.p++;s2Load()}else{W.p=Math.min(W.start,S.sc.length-1);scStep(3)}
+}
+async function s2Auto(){
+  s2Save();const it=S.sc[W.p],st=$('scSt'),why=()=>navigator.onLine?'não foi possível carregar o OpenCV.js':'sem internet';
+  try{
+    st.textContent='Analisando documento…';await loadCV();await new Promise(r=>setTimeout(r,30));
+    const q=detectQuad(it.src);st.textContent='';
+    if(!q){toast('Não foi possível detectar as bordas automaticamente. Ajuste o recorte manualmente.',1);return}
+    const n=W.cp.getImageData(),k=n.naturalWidth/it.src.width,xs=q.map(p=>p[0]*k),ys=q.map(p=>p[1]*k),x=Math.min(...xs),y=Math.min(...ys);
+    W.cp.setData({x,y,width:Math.max(...xs)-x,height:Math.max(...ys)-y});
+    toast('Bordas sugeridas. Ajuste a moldura ou use Perspectiva para endireitar.');
+  }catch(e){console.warn(e);st.textContent='';toast('Detecção automática indisponível ('+why()+'). Ajuste o recorte manualmente.',1)}
+}
+async function s2Persp(){
+  s2Save();const it=S.sc[W.p],st=$('scSt');
+  try{
+    st.textContent='Carregando OpenCV.js…';await loadCV();
+    let q=null;try{q=detectQuad(it.orig)}catch(e){}
+    st.textContent='';
+    if(await quadOpen(W.p,q,q?'Sugestão automática (experimental): confira e arraste os 4 pontos até os cantos da folha.':undefined))s2Load();
+  }catch(e){console.warn(e);st.textContent='';toast('Perspectiva indisponível ('+(navigator.onLine?'não foi possível carregar o OpenCV.js':'sem internet')+'). Use o enquadramento manual.',1)}
+}
+
+/* --- passo 3: filtros --- */
+const FILT=[['orig','image','Original'],['magic','wand-magic-sparkles','Magic Color'],['bw','file-lines','Documento P&B'],['gray','sun','Clarear / Cinza']];
+$('s3F').innerHTML=FILT.map(f=>`<button class="sb" data-f="${f[0]}" onclick="s3Apply({f:'${f[0]}'})"><i class="fa-solid fa-${f[1]}"></i><span>${f[2]}</span></button>`).join('');
+function s3Draw(){
+  const it=S.sc[W.p];if(!it){scStep(1);return}
+  $('s3T').textContent=`Foto ${W.p+1} de ${S.sc.length} · Filtros`;
+  $('s3B').value=it.b;$('s3K').value=it.c;
+  document.querySelectorAll('#s3F .sb').forEach(b=>{const on=b.dataset.f===it.f;b.classList.toggle('ring-2',on);b.classList.toggle('ring-indigo-400',on);b.classList.toggle('!bg-indigo-600',on)});
+  const c=proc(it.src,it.cr,it,1000),t=$('s3C');t.width=c.width;t.height=c.height;t.getContext('2d').drawImage(c,0,0);
+}
+function s3Apply(p){(($('s3A').checked)?S.sc:[S.sc[W.p]]).forEach(it=>Object.assign(it,p));s3Draw()}
+function s3Nav(d){const j=W.p+d;if(j<0||j>=S.sc.length)return;W.p=j;s3Draw()}
+$('s3B').oninput=()=>s3Apply({b:+$('s3B').value});
+$('s3K').oninput=()=>s3Apply({c:+$('s3K').value});
+
+/* --- passo 4: exportar PDF --- */
+$('scGo').onclick=function(){run(this,async()=>{
+  if(!S.sc.length)throw new Error('Capture ao menos uma página.');
+  const items=[];
+  for(let i=0;i<S.sc.length;i++){const p=S.sc[i];prog(`Aplicando ajustes ${i+1}/${S.sc.length}`,i/S.sc.length*.5);items.push(await cvBytes(proc(p.src,p.cr,p,2200)));await new Promise(r=>setTimeout(r))}
+  const sz=$('scSz').value;
+  dl(await imgsToPdf(items,{size:sz,orient:'auto',margin:sz==='fit'?0:8}),nm('scName','Documento_Escaneado'));
+})};
+scCount();
 
 /* ---------- imagens -> PDF ---------- */
 async function imgsToPdf(items,o){
@@ -567,18 +716,13 @@ async function imgsToPdf(items,o){
     const it=items[n],img=await pdf.embedJpg(it.bytes);
     let W,H;
     if(o.size==='fit'){W=it.w*.75+2*m;H=it.h*.75+2*m}
-    else{[W,H]=SZ[o.size];if(o.orient==='l')[W,H]=[H,W]}
+    else{[W,H]=SZ[o.size];if(o.orient==='l'||(o.orient==='auto'&&it.w>it.h))[W,H]=[H,W]}
     const k=Math.min((W-2*m)/it.w,(H-2*m)/it.h),w=it.w*k,h=it.h*k;
     pdf.addPage([W,H]).drawImage(img,{x:(W-w)/2,y:(H-h)/2,width:w,height:h});
     prog(`Página ${n+1} de ${items.length}`,(n+1)/items.length);
   }
   return pdf.save();
 }
-$('scGo').onclick=function(){run(this,async()=>{
-  if(!S.sc.length)throw new Error('Capture ao menos uma página.');
-  const items=[];
-  for(let i=0;i<S.sc.length;i++){const s=S.sc[i];prog(`Aplicando ajustes ${i+1}/${S.sc.length}`,i/S.sc.length*.5);items.push(await cvBytes(proc(s.src,s.cr,s,2200)));await new Promise(r=>setTimeout(r))}
-  dl(await imgsToPdf(items,{size:'fit',margin:0}),'escaneado.pdf')})};
 dz('imD','imIn',async fs=>{
   for(const f of fs.filter(f=>/^image\/(png|jpe?g|webp)$/.test(f.type))){
     try{const c=await toCanvas(f),r=await cvBytes(c);r.url=URL.createObjectURL(new Blob([r.bytes],{type:'image/jpeg'}));S.im.push(r)}catch(e){toast('Imagem não suportada: '+f.name,1)}
@@ -782,7 +926,6 @@ document.querySelectorAll('.tool').forEach(sec=>{
 window.addEventListener('load',()=>{loaded=true;renderAv()});
 window.addEventListener('online',()=>{renderAv();toast('Conexão restabelecida.')});
 window.addEventListener('offline',()=>{renderAv();toast('Sem internet: as ferramentas já carregadas continuam funcionando.',1)});
-$('scAuto').onchange=function(){if(this.checked)loadCV().catch(()=>{});else $('scSt').textContent=''};
 renderAv();
 
 /* ---------- Central de Ajuda ---------- */
@@ -805,11 +948,12 @@ const FAQ=[
 {c:2,t:'compress',q:'Como comprimir um PDF?',a:'Em “Comprimir PDF”, escolha o arquivo e o nível. “Só otimizar a estrutura” mantém o texto, mas economiza pouco. Leve, Média e Alta transformam as páginas em imagens JPEG (150, 110 ou 80 dpi): o arquivo diminui mais, porém o texto deixa de ser selecionável. O MarPDF mostra o tamanho antes e depois e só oferece o download se o novo arquivo realmente ficou menor.',k:'comprimir reduzir diminuir tamanho peso compressao'},
 {c:4,t:'compress',q:'Por que meu PDF não ficou menor depois da compressão?',a:'PDFs de texto e vetores costumam já ser pequenos; transformá-los em imagens pode até aumentar o arquivo. Se o resultado não for menor, o MarPDF avisa e mantém o original. Tente um nível mais alto ou outro PDF.',k:'comprimir nao diminuiu maior tamanho'},
 {c:2,t:null,q:'Como baixar o resultado?',a:'Ao terminar, o navegador baixa o arquivo pronto automaticamente. Se nada aparecer, procure na pasta de downloads e confira se o navegador não bloqueou o download.',k:'baixar download arquivo pronto salvar'},
-{c:3,t:'scan',q:'Como escanear documentos com a câmera?',a:'Em “Scanner”, toque em “Capturar página” (abre a câmera do aparelho) ou “Da galeria”. Repita para cada página. Em cada miniatura, ✎ abre o recorte (Cropper.js) com filtros Original, P&amp;B Documento e Remover sombras, brilho e contraste; ⬚ ajusta os 4 cantos da folha. Depois toque em “Gerar PDF”.',k:'scanner escanear camera foto recorte filtro'},
-{c:3,t:'scan',q:'Como usar a detecção automática de bordas?',a:'Marque “Detectar bordas e recortar automaticamente (Experimental)”. Ao fotografar, o MarPDF carrega o OpenCV.js (exige internet na primeira vez), analisa a foto e mostra 4 pontos sobre a folha. Você confere, arrasta os pontos se necessário e toca em “Confirmar e endireitar” (correção de perspectiva). Nada é aplicado sem sua confirmação.',k:'deteccao automatica bordas experimental perspectiva opencv'},
-{c:3,t:'scan',q:'O que fazer se o scanner não detectar a folha?',a:'Aparece a mensagem “Não foi possível detectar as bordas automaticamente. Ajuste o recorte manualmente.”. A foto original é mantida: use ⬚ para posicionar os 4 cantos ou ✎ para recortar. Ajudam: fundo mais escuro que o papel, boa iluminação e a folha inteira visível.',k:'falhou nao detectou borda folha'},
-{c:3,t:'scan',q:'Posso desativar a detecção automática e recortar manualmente?',a:'Sim. Ela já vem desativada. Com ela desligada, o scanner funciona como antes e o recorte manual (✎ e ⬚) continua disponível. Se o OpenCV.js não carregar, só a detecção automática e a correção de perspectiva ficam indisponíveis.',k:'desativar manual desligar'},
-{c:3,t:'scan',q:'Por que a câmera não funciona?',a:'O botão “Capturar página” usa a câmera nativa do aparelho. Se ela não abrir, verifique a permissão do navegador para câmera, tente outro navegador ou use “Da galeria” depois de tirar a foto no app de câmera.',k:'camera permissao nao abre'},
+{c:3,t:'scan',q:'Como escanear documentos com a câmera?',a:'O scanner tem 4 passos. <b>1. Capturar:</b> toque em “Abrir câmera” (visor ao vivo, com contador de fotos) ou use “Câmera nativa” / “Da galeria”, e toque em “Concluir Capturas”. <b>2. Enquadrar:</b> ajuste a moldura (Cropper.js), gire 90°, “Selecionar tudo”, “Ajuste automático” ou “Perspectiva”, e confirme. <b>3. Filtros:</b> Original, Magic Color, Documento P&amp;B ou Clarear/Cinza, com brilho e contraste. <b>4. Exportar:</b> reordene, exclua ou adicione páginas, escolha o nome e toque em “Salvar e Baixar PDF”.',k:'scanner escanear camera foto recorte filtro passos'},
+{c:3,t:'scan',q:'Como usar o Ajuste automático e a Perspectiva?',a:'Ambos são opcionais e experimentais. “Ajuste automático” procura a folha e posiciona a moldura do Cropper.js sobre ela. “Perspectiva” mostra 4 pontos arrastáveis sobre a foto original e, ao confirmar, endireita a imagem. As duas carregam o OpenCV.js sob demanda (precisa de internet na primeira vez) e nada é aplicado sem a sua confirmação. A foto original é mantida.',k:'deteccao automatica bordas experimental perspectiva opencv endireitar'},
+{c:3,t:'scan',q:'O que fazer se o scanner não detectar a folha?',a:'Aparece a mensagem “Não foi possível detectar as bordas automaticamente. Ajuste o recorte manualmente.”. Basta arrastar a moldura do Cropper.js, ou usar “Perspectiva” e posicionar os 4 cantos. Ajudam: fundo mais escuro que o papel, boa iluminação e a folha inteira visível.',k:'falhou nao detectou borda folha'},
+{c:3,t:'scan',q:'Preciso usar a detecção automática?',a:'Não. O enquadramento manual com a moldura do Cropper.js está sempre disponível e funciona mesmo se o OpenCV.js não carregar.',k:'desativar manual desligar opcional'},
+{c:3,t:'scan',q:'Como adicionar ou reordenar páginas depois?',a:'No passo 4, use “Adicionar mais fotos” para capturar mais páginas no mesmo documento, arraste pela alça ☰ para reordenar e use a lixeira para excluir. Os ícones de recorte e de varinha reabrem o enquadramento e os filtros daquela página.',k:'adicionar mais paginas reordenar excluir ordem'},
+{c:3,t:'scan',q:'Por que a câmera não funciona?',a:'O visor ao vivo exige permissão da câmera e, em geral, endereço HTTPS (ou localhost). Se não abrir, use “Câmera nativa”, que chama a câmera do aparelho, ou “Da galeria”. Verifique também as permissões do navegador.',k:'camera permissao nao abre https visor'},
 {c:4,t:null,q:'Por que meu arquivo não abre?',a:'O PDF pode estar corrompido ou exigir senha para abrir; PDFs com senha podem não funcionar. Tente abrir o arquivo em outro programa para conferir e use uma cópia sem senha.',k:'arquivo nao abre erro corrompido senha invalido'},
 {c:4,t:null,q:'O que acontece se eu fechar a página durante o processamento?',a:'A operação é interrompida e nada é salvo. Os arquivos originais não são afetados e nada foi enviado a servidores. Basta refazer a operação.',k:'fechar pagina processamento perder'},
 {c:4,t:null,q:'Posso usar documentos grandes?',a:'O código não impõe um limite fixo, mas tudo usa a memória do aparelho. PDFs com muitas páginas demoram mais (principalmente em “Organizar”, que desenha miniaturas) e podem travar celulares mais simples. Se acontecer, divida o PDF antes.',k:'grande pesado lento travar memoria'},
