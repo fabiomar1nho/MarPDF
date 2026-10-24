@@ -9,6 +9,8 @@
 <script>tailwind.config={darkMode:'class'}</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<!-- Fonte Retrô (Press Start 2P) -->
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
@@ -46,9 +48,10 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
 
 <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800">
   <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
-    <button onclick="go('home')" class="flex items-center gap-2.5 shrink-0 rounded-xl" aria-label="MarPDF, menu principal">
-      <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-indigo-600 text-white flex items-center justify-center shadow"><i class="fa-solid fa-file-pdf"></i></span>
-      <span class="text-2xl font-black tracking-tight" style="font-family:Georgia,'Trebuchet MS',serif"><span class="text-red-500">Mar</span><span class="text-indigo-600 dark:text-indigo-400">PDF</span></span>
+    <button onclick="go('home')" class="flex items-center gap-3 shrink-0 rounded-xl group" aria-label="MARPDF, menu principal">
+      <!-- Imagem PNG pura, sem caixinha e sem fundo atrás -->
+      <img src="caminho/do/seu-icone.png" alt="Logo" class="h-8 w-auto object-contain transition-transform group-hover:scale-105">
+      <span class="bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent font-['Press_Start_2P'] text-[30px] uppercase tracking-wider">MARPDF</span>
     </button>
     <nav id="tabs" aria-label="Ferramentas" class="hidden lg:flex flex-1 items-center justify-center gap-1"></nav>
     <div class="flex-1 lg:hidden"></div>
@@ -67,11 +70,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
 <main class="max-w-6xl w-full mx-auto px-4 py-5 flex-1">
 
 <div id="home">
-  <div class="text-center py-6 sm:py-10">
-    <h1 class="text-3xl sm:text-5xl font-black tracking-tight">Todas as suas ferramentas para <span class="bg-gradient-to-r from-red-500 to-indigo-600 bg-clip-text text-transparent">PDF</span> em um só lugar</h1>
-    <p class="mt-2 font-bold text-indigo-600 dark:text-indigo-300">Central de Ferramentas para PDF • Simples, Rápida e Segura</p>
-    <p class="mt-2 text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">Junte, divida, organize, converta e prepare seus documentos em uma central gratuita, sem cadastro e com processamento local.</p>
-    <div class="mt-4 flex flex-wrap justify-center gap-2 text-xs font-bold">
+  <div class="text-center py-6 sm:py-4">
+    <h1 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight">Todas as suas ferramentas para PDF</span> <br> em um só lugar.</h1>
+    <div class="mt-12 flex flex-wrap justify-center gap-2 text-xs font-bold">
       <span class="px-3 py-2 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200"><i class="fa-solid fa-gift mr-1"></i>100% GRATUITO</span>
       <span class="px-3 py-2 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200"><i class="fa-solid fa-user-slash mr-1"></i>SEM LOGIN OU CADASTRO</span>
       <span class="px-3 py-2 rounded-full bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200"><i class="fa-solid fa-shield-halved mr-1"></i>PROCESSAMENTO LOCAL DOS DOCUMENTOS</span>
@@ -292,15 +293,25 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
 </section>
 </main>
 
-<footer class="mt-6 py-6 text-center text-sm text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
-  <p class="font-semibold">MarPDF • Desenvolvido com <span class="text-rose-500">❤️</span> por MAR1NHO</p>
-  <p>Ferramentas gratuitas • Sem login • Processamento local dos documentos</p>
-  <p class="flex flex-wrap justify-center gap-x-5 mt-1">
+<footer class="mt-3 py-3 text-center text-sm text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
+  <p class="flex flex-wrap justify-center gap-x-5 mt-0">
     <button class="underline min-h-[44px]" onclick="openHelp({})">Central de Ajuda</button>
     <button class="underline min-h-[44px]" onclick="openHelp({scroll:1})">📱 Como adicionar à tela inicial</button>
     <button class="underline min-h-[44px]" onclick="openHelp({q:'internet'})">Internet e conectividade</button>
   </p>
-  <p class="text-xs">Processamento local via PDF-Lib &amp; PDF.js</p>
+
+  <!-- Redes Sociais e Copyright -->
+  <div class="flex flex-wrap items-center justify-center gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/60 text-xs">
+    <a href="https://github.com/fabiomar1nho" target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 hover:text-slate-800 dark:hover:text-white transition-colors">
+      <i class="fa-brands fa-github text-sm"></i> GitHub
+    </a>
+    <span class="text-slate-300 dark:text-slate-700">•</span>
+    <a href="https://www.instagram.com/fabio_mar1nho/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 hover:text-pink-600 dark:hover:text-pink-400 transition-colors">
+      <i class="fa-brands fa-instagram text-sm"></i> Instagram
+    </a>
+    <span class="text-slate-300 dark:text-slate-700">•</span>
+    <span>Copyright &copy; 2026 fabiomar1nho</span>
+  </div>
 </footer>
 
 <div id="qd" class="hidden fixed inset-0 z-[48] bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4">
