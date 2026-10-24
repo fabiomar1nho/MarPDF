@@ -144,7 +144,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
   </div>
 
   <!-- EDITOR IMEDIATO (tela cheia) -->
-  <div id="ed" class="hidden fixed inset-0 z-[45] bg-slate-900 text-white flex flex-col">
+  <div id="ed" class="hidden fixed inset-0 !mt-0 z-[45] bg-slate-900 text-white flex flex-col">
     <div class="flex items-center justify-between gap-3 p-3">
       <button class="ib !bg-white/10 !border-white/20 !text-white" onclick="edNo()" aria-label="Descartar e voltar"><i class="fa-solid fa-xmark"></i></button>
       <div class="text-center min-w-0"><b id="edT" class="block text-sm"></b><span id="scSt" role="status" aria-live="polite" class="block text-xs text-indigo-200"></span></div>
@@ -171,20 +171,20 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
   </div>
 
   <!-- Pré-visualização da ordem final -->
-  <div id="pv" class="hidden fixed inset-0 z-[45] bg-slate-900 text-white flex flex-col">
+  <div id="pv" class="hidden fixed inset-0 !mt-0 z-[45] bg-slate-900 text-white flex flex-col">
     <div class="flex items-center justify-between p-3"><b>Ordem final do documento</b><button class="ib !bg-white/10 !border-white/20 !text-white" onclick="scPvClose()" aria-label="Fechar pré-visualização"><i class="fa-solid fa-xmark"></i></button></div>
     <div id="pvL" class="flex-1 overflow-y-auto px-3 pb-6 space-y-4 max-w-2xl w-full mx-auto"></div>
   </div>
 
   <!-- Visor ao vivo (MediaDevices) -->
-  <div id="vf" class="hidden fixed inset-0 z-40 bg-black text-white flex flex-col">
+  <div id="vf" class="hidden fixed inset-0 !mt-0 z-40 bg-black text-white flex flex-col">
     <div class="flex items-center justify-between p-3">
       <button class="ib !bg-white/10 !border-white/20 !text-white" onclick="vfClose()" aria-label="Fechar câmera"><i class="fa-solid fa-xmark"></i></button>
       <span id="vfCnt" role="status" aria-live="polite" class="px-4 py-2 rounded-full bg-white/15 font-bold text-xs sm:text-sm"></span>
       <span class="w-10"></span>
     </div>
     <div class="flex-1 min-h-0 relative flex items-center justify-center">
-      <video id="vfV" playsinline muted autoplay class="max-w-full max-h-full"></video>
+      <video id="vfV" playsinline muted autoplay class="absolute inset-0 w-full h-full object-contain bg-black"></video>
       <div id="vfF" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-150"></div>
     </div>
     <div class="p-4 flex items-center justify-between gap-3">
@@ -373,7 +373,7 @@ function go(id){
     resetScanner();
   }
   cur=id;const h=id==='home';
-  $('home').classList.toggle('hidden',!h);$('bc').classList.toggle('hidden',h);$('bcH').classList.toggle('hidden',id==='help');
+  $('home').classList.toggle('hidden',!h);$('bc').classList.toggle('hidden',h);$('bcH').classList.toggle('hidden',id==='help'||id==='scan');
   document.querySelectorAll('.tool').forEach(s=>s.classList.toggle('hidden',s.id!=='t-'+id));
   document.querySelectorAll('.nv:not(#mb),.mi').forEach(b=>b.classList.toggle('on',b.dataset.t===id));$('mb').classList.toggle('on',TOOLS.some(t=>t[0]===id&&!MAIN.includes(t[0])));mclose();mtoggle(false);
   if(!h)$('bcT').textContent=id==='help'?'Central de Ajuda':TOOLS.find(t=>t[0]===id)[2];
@@ -640,13 +640,19 @@ async function vfOpen(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Câmera ao vivo indisponível aqui. Abrindo a câmera nativa…',1);$('scCam').click();return}
   try{
     VS=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
-    VS.getTracks().forEach(t=>t.onended=()=>{vfClose();toast('A câmera foi interrompida. Abra-a novamente.',1)});$('vfV').srcObject=VS;await $('vfV').play().catch(()=>{});
-    $('vf').classList.remove('hidden');document.body.style.overflow='hidden';
+    VS.getTracks().forEach(t=>t.onended=()=>{vfClose();toast('A câmera foi interrompida. Abra-a novamente.',1)});vfReset();$('vf').classList.remove('hidden');document.body.style.overflow='hidden';
+    const v=$('vfV');v.srcObject=VS;void v.offsetWidth;await v.play().catch(()=>{});
   }catch(e){toast('Não foi possível usar a câmera ao vivo (permissão negada ou indisponível). Use “Câmera nativa” ou “Da galeria”.',1)}
 }
 function vfClose(){
   if(VS){VS.getTracks().forEach(t=>t.stop());VS=null}
-  $('vfV').srcObject=null;$('vf').classList.add('hidden');document.body.style.overflow='';
+  vfReset();$('vf').classList.add('hidden');document.body.style.overflow='';
+}
+/* limpa o elemento de vídeo e estilos inline, para o visor recalcular o tamanho em cada abertura */
+function vfReset(){
+  const v=$('vfV');try{v.pause()}catch(e){}
+  v.srcObject=null;v.removeAttribute('src');v.removeAttribute('style');v.load();
+  $('vf').removeAttribute('style');$('vfF').removeAttribute('style');
 }
 $('vfS').onclick=()=>{
   const v=$('vfV');if(!v.videoWidth)return;
@@ -792,7 +798,9 @@ function resetScanner(){
   vfClose();                                             /* câmera: para todas as faixas do MediaStream */
   clearTimeout(E.t);
   if(E.cp){try{E.cp.destroy()}catch(e){}E.cp=null}       /* Cropper.js */
-  const im=$('edI');im.onload=null;im.removeAttribute('src');
+  const im=$('edI');im.onload=null;im.removeAttribute('src');im.setAttribute('style','display:block;max-width:100%;max-height:100%');im.classList.remove('cropper-hidden');
+  im.parentNode.querySelectorAll('.cropper-container').forEach(n=>n.remove());
+  vfReset();$('qc').width=$('qc').height=0;
   if(Q&&Q.res)Q.res(false);Q=null;                       /* editor de perspectiva pendente */
   ['ed','pv','qd','ld'].forEach(id=>$(id).classList.add('hidden'));$('pvL').innerHTML='';
   [...S.sc,E.it].filter(Boolean).forEach(it=>[it.src,it.orig].forEach(c=>{try{c.width=c.height=0}catch(e){}}));  /* libera memória dos canvas */
@@ -1023,7 +1031,10 @@ function renderAv(){
 }
 document.querySelectorAll('.tool').forEach(sec=>{
   const id=sec.id.slice(2);if(!DEPS[id])return;
-  sec.insertAdjacentHTML('beforeend',`<details class="text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-700 pt-3"><summary class="cursor-pointer font-semibold min-h-[32px]"><i class="fa-solid fa-plug-circle-check text-indigo-500"></i> Disponibilidade desta ferramenta <span data-av="${id}" class="ml-2"></span></summary><p data-avd="${id}" class="mt-2 text-slate-600 dark:text-slate-300"></p></details>`);
+  const det=`<details class="text-xs text-slate-500 dark:text-slate-400"><summary class="cursor-pointer min-h-[32px] flex items-center gap-1"><i class="fa-solid fa-plug-circle-check"></i> Disponibilidade desta ferramenta <span data-av="${id}" class="ml-2"></span></summary><p data-avd="${id}" class="mt-2 text-slate-600 dark:text-slate-300"></p></details>`;
+  sec.insertAdjacentHTML('beforeend',id==='scan'
+    ?`<div class="!mt-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 pt-3 border-t border-slate-200/60 dark:border-slate-700/60"><button type="button" class="self-start text-xs text-slate-500 dark:text-slate-400 hover:underline min-h-[32px] flex items-center gap-1" onclick="openHelp({t:'scan'})"><i class="fa-solid fa-circle-question"></i> Como usar esta ferramenta?</button>${det}</div>`
+    :`<div class="border-t border-slate-200 dark:border-slate-700 pt-3">${det}</div>`);
 });
 window.addEventListener('load',()=>{loaded=true;renderAv()});
 window.addEventListener('online',()=>{renderAv();toast('Conexão restabelecida.')});
