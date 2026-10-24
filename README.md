@@ -38,19 +38,12 @@ Uma etiqueta de aviso só aparece em uma ferramenta quando ela precisa de intern
 
 ## Scanner com câmera
 
-**Fluxo manual (padrão):**
+Fluxo contínuo, sem trocar de tela entre uma página e outra:
 
-1. Toque em **Capturar página** (câmera nativa do aparelho) ou **Da galeria**.
-2. Em cada miniatura, ✎ abre o editor de recorte (Cropper.js) com filtros *Original*, *P&B Documento* e *Remover sombras*, mais brilho e contraste.
-3. Reordene pela alça ☰ e toque em **Gerar PDF**.
-
-**Detecção automática de bordas (experimental, desativada por padrão):**
-
-- Marque *Detectar bordas e recortar automaticamente (Experimental)*.
-- O OpenCV.js é carregado sob demanda. O MarPDF procura um quadrilátero plausível (escala de cinza, desfoque, Canny e limiarização de Otsu, contornos e aproximação poligonal).
-- O resultado é só uma **sugestão**: você vê os 4 cantos sobre a foto, arrasta os pontos (mouse ou toque) e confirma. Só então a perspectiva é corrigida.
-- O botão ⬚ de cada miniatura permite posicionar os 4 cantos manualmente a qualquer momento, sempre a partir da foto original, que nunca é descartada.
-- Se o OpenCV.js não carregar ou nada confiável for detectado, o scanner continua normalmente com o recorte manual, e uma mensagem avisa.
+1. **Câmera → edição imediata:** "Abrir câmera" usa o visor ao vivo (`MediaDevices`, câmera traseira); há também "Câmera nativa" (`input capture`) e "Da galeria". Cada foto abre na hora em um editor de tela cheia com recorte (Cropper.js, moldura que "gruda" nas bordas), filtros em tempo real (Original, Magic Color, Documento P&B, Escala de cinza), rotação de 90° e brilho/contraste. Ações: **Refazer Foto** ou **Confirmar Página ➔**. Opcionais e experimentais: "Automático" e "Perspectiva" (OpenCV.js sob demanda; nada é aplicado sem confirmação e a foto original é mantida).
+2. **Ciclo de páginas:** ao confirmar, a câmera volta automaticamente, com o contador "📸 N Páginas Digitalizadas" e o botão "Concluir / Ver Todas as Páginas (N)".
+3. **Páginas do lote:** miniaturas reordenáveis (alça ☰, mouse ou toque), exclusão, edição individual, "Aplicar este filtro a todas as páginas", "Adicionar fotos" e pré-visualização da ordem final.
+4. **Exportar:** nome (padrão `Documento_ano-mês-dia_hora`), tamanho (proporcional, A4 ou Carta), orientação, margens (sem margem, 5 mm ou 10 mm), "Salvar e Baixar PDF" e "Compartilhar PDF" (Web Share API; disponível só em navegadores que permitem compartilhar arquivos).
 
 ## Internet e funcionamento offline
 
