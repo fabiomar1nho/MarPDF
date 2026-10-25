@@ -4,7 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MarPDF • Central de Ferramentas para PDF</title>
-<script>try{var t=localStorage.getItem('mp-theme');if(t?t==='d':matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.classList.add('dark')}catch(e){}</script>
+<!-- Ícones do MarPDF -->
+<link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="assets/icons/favicon-48x48.png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<!-- Android / PWA -->
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/android-chrome-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/icons/android-chrome-512x512.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<script>
+try{
+  var t=localStorage.getItem('mp-theme');
+  if(t?t==='d':matchMedia('(prefers-color-scheme:dark)').matches)
+    document.documentElement.classList.add('dark')
+}catch(e){}
+</script>
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script>tailwind.config={darkMode:'class'}</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -50,7 +66,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
   <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
     <button onclick="go('home')" class="flex items-center gap-3 shrink-0 rounded-xl group" aria-label="MARPDF, menu principal">
       <!-- Imagem PNG pura, sem caixinha e sem fundo atrás -->
-      <img src="assets/icon.png" alt="Logo" class="h-8 w-auto object-contain transition-transform group-hover:scale-105">
+      <img src="assets/icon.png" alt="Logo" class="h-14 w-auto object-contain transition-transform group-hover:scale-105">
       <span class="bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent font-['Press_Start_2P'] text-[30px] uppercase tracking-wider">MARPDF</span>
     </button>
     <nav id="tabs" aria-label="Ferramentas" class="hidden lg:flex flex-1 items-center justify-center gap-1"></nav>
@@ -73,7 +89,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
 
 <div id="home">
   <div class="text-center py-6 sm:py-5">
-    <h1 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight">Todas as suas ferramentas para PDF</span> <br> em um só lugar.</h1>
+    <h1 class="text-3xl sm:text-3xl font-black tracking-tight leading-tight">Todas as suas ferramentas para PDF</span> em um só lugar.</h1>
     <div class="mt-9 flex flex-wrap justify-center gap-4 text-xs font-bold">
       <span class="px-3 py-2 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200"><i class="fa-solid fa-gift mr-1"></i>100% GRATUITO</span>
       <span class="px-3 py-2 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200"><i class="fa-solid fa-user-slash mr-1"></i>SEM LOGIN OU CADASTRO</span>
