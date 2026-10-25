@@ -50,14 +50,16 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
   <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
     <button onclick="go('home')" class="flex items-center gap-3 shrink-0 rounded-xl group" aria-label="MARPDF, menu principal">
       <!-- Imagem PNG pura, sem caixinha e sem fundo atrás -->
-      <img src="caminho/do/seu-icone.png" alt="Logo" class="h-8 w-auto object-contain transition-transform group-hover:scale-105">
+      <img src="assets/icon.png" alt="Logo" class="h-8 w-auto object-contain transition-transform group-hover:scale-105">
       <span class="bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent font-['Press_Start_2P'] text-[30px] uppercase tracking-wider">MARPDF</span>
     </button>
     <nav id="tabs" aria-label="Ferramentas" class="hidden lg:flex flex-1 items-center justify-center gap-1"></nav>
     <div class="flex-1 lg:hidden"></div>
     <div class="flex items-center gap-1 sm:gap-2 shrink-0">
       <span id="net" role="status" tabindex="0" class="group relative w-9 h-9 flex items-center justify-center rounded-lg cursor-default"></span>
-      <button class="ib" onclick="openHelp({})" aria-label="Central de Ajuda" title="Central de Ajuda"><i class="fa-solid fa-circle-question"></i></button>
+      <button onclick="openHelp({})" aria-label="Central de Ajuda" title="Central de Ajuda"
+  class="flex items-center justify-center bg-transparent border-0 p-0 rounded-none hover:opacity-75 transition-opacity">
+  <i class="fa-solid fa-circle-question"></i> </button>
       <button id="thB" onclick="theme(!root.classList.contains('dark'))" aria-label="Alternar tema claro/escuro" class="relative w-14 h-8 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0 transition-colors">
         <span id="thK" class="absolute top-1 left-1 w-6 h-6 rounded-full bg-white text-amber-500 dark:text-indigo-500 shadow flex items-center justify-center text-xs transition-transform"><i id="thI" class="fa-solid fa-sun"></i></span>
       </button>
@@ -70,9 +72,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
 <main class="max-w-6xl w-full mx-auto px-4 py-5 flex-1">
 
 <div id="home">
-  <div class="text-center py-6 sm:py-4">
+  <div class="text-center py-6 sm:py-5">
     <h1 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight">Todas as suas ferramentas para PDF</span> <br> em um só lugar.</h1>
-    <div class="mt-12 flex flex-wrap justify-center gap-2 text-xs font-bold">
+    <div class="mt-9 flex flex-wrap justify-center gap-4 text-xs font-bold">
       <span class="px-3 py-2 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200"><i class="fa-solid fa-gift mr-1"></i>100% GRATUITO</span>
       <span class="px-3 py-2 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200"><i class="fa-solid fa-user-slash mr-1"></i>SEM LOGIN OU CADASTRO</span>
       <span class="px-3 py-2 rounded-full bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200"><i class="fa-solid fa-shield-halved mr-1"></i>PROCESSAMENTO LOCAL DOS DOCUMENTOS</span>
